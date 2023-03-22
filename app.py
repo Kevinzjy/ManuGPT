@@ -83,7 +83,7 @@ def submit():
         print(f"Waiting for response from openai")
         revised_text = revise_paragraph(
             headers, form['title-text'], form['keywords-text'], form['section-text'].lower(),
-            form['input-text'], form['model-text'] == "text-davinci-edit-001",
+            form['input-text'], form['model-text'],
         )
 
     return jsonify({"status": "Success", "revised": revised_text})
@@ -95,10 +95,8 @@ def download():
     time_stamp = datetime.now().strftime("%Y%m%d-%H%H%S")
     revised_file = TMP_DIR / f"ManuGPT.{time_stamp}.docx"
 
-    model_name = 'text-davinci-003' if form['model-text'] == "Completion" else "text-davinci-edit-001"
-
     print(f"Saving revised docx {revised_file}")
-    save_docx(form['input-text'], form['output-text'], model_name, str(revised_file))
+    save_docx(form['input-text'], form['output-text'], form['model-text'], str(revised_file))
 
     return send_file(str(revised_file), as_attachment=True)
 
@@ -187,7 +185,7 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
         return f"{prompt}.", paragraph_text.strip()
 
 
-def revise_paragraph(headers, title, keywords, section, text, edit_endpoint=False):
+def revise_paragraph(headers, title, keywords, section, text, model_name):
     """
     Revise your paragraph using openAI API
     :param headers:
@@ -198,50 +196,38 @@ def revise_paragraph(headers, title, keywords, section, text, edit_endpoint=Fals
     :param edit_endpoint:
     :return:
     """
+    if model_name in ['text-davinci-003', 'gpt-3.5-turbo']:
+        edit_endpoint = False
+    else:
+        edit_endpoint = True
+
     prompt = get_prompt(text, section, title, keywords, edit_endpoint=edit_endpoint)
 
-    if edit_endpoint is False:
-        json_data = {
-            'model': 'text-davinci-003',
-            'prompt': prompt,
-            'max_tokens': 1024,
-            'temperature': 0.5,
-        }
-        if PROXIES is not None:
-            response = requests.post(
-                'https://api.openai.com/v1/completions',
-                headers=headers,
-                json=json_data,
-                proxies=PROXIES,
-            )
-        else:
-            response = requests.post(
-                'https://api.openai.com/v1/completions',
-                headers=headers,
-                json=json_data,
-            )
+    # Prepare request data
+    if model_name == 'text-davinci-003':
+        url = 'https://api.openai.com/v1/completions'
+        json_data = {'model': model_name, 'prompt': prompt, 'max_tokens': 1024, 'temperature': 0.5}
+    elif model_name == 'text-davinci-edit-001':
+        url = 'https://api.openai.com/v1/edits'
+        json_data = {'model': model_name, 'input': prompt[1], 'instruction': prompt[0]}
+    elif model_name == 'gpt-3.5-turbo':
+        url = 'https://api.openai.com/v1/chat/completions'
+        json_data = {'model': model_name, 'messages': [{'role': 'user', 'content': prompt}]}
     else:
-        json_data = {
-            'model': 'text-davinci-edit-001',
-            'input': prompt[1],
-            'instruction': prompt[0]
-        }
-        if PROXIES is not None:
-            response = requests.post(
-                'https://api.openai.com/v1/edits',
-                headers=headers,
-                json=json_data,
-                proxies=PROXIES,
-            )
-        else:
-            response = requests.post(
-                'https://api.openai.com/v1/edits',
-                headers=headers,
-                json=json_data,
-            )
+        print(f"Unsupported model name for {model_name}")
 
-    edited = json.loads(response.text.strip())
-    text = edited['choices'][0]['text'].strip()
+    # Make request
+    if PROXIES is not None:
+        response = requests.post(url, headers=headers, json=json_data, proxies=PROXIES)
+    else:
+        response = requests.post(url, headers=headers, json=json_data)
+
+    ret = json.loads(response.text.strip())
+
+    if model_name in ['text-davinci-003', 'text-davinci-edit-001']:
+        text = ret['choices'][0]['text'].strip()
+    else:
+        text = ret['choices'][0]['message']['content']
 
     return text
 

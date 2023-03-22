@@ -81,18 +81,17 @@ WARNING: This is a development server. Do not use it in a production deployment.
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:47118
  * Running on http://192.168.50.40:47118
-Press CTRL+C to quit
 ```
 
 ## Usage
 
 ![image](https://github.com/Kevinzjy/ManuGPT/blob/master/screenshot.png)
 
-1. Input the title / keywords of your manuscript; Select which section (Abstract / Introduction / Results / Discussion / Methods ) your paragraph belongs to.
-2. Select model for text completion (text-davinci-003) or edit (text-davinci-edit-001). The former one is recommended.
+1. Input the title / keywords of your manuscript. Select which section (Abstract / Introduction / Results / Discussion / Methods ) your paragraph belongs to.
+2. Select model from text completion(`text-davinci-003`), text edit (`text-davinci-edit-001`) or chat completion (`gpt-3.5-turbo`). The `text-davinci-003` model is recommended.
 3. Make sure the API key is correct. Otherwise, change it in `app.py` or edit in the webpage.
-4. Input your paragraph is the left text area.
-5. Press the "Submit" button in the upper right. Wait patiently for the response. The revised text will be displayed in the right text area.
+4. Input your paragraph in the left side.
+5. Press the "Submit" button in the upper right. Wait patiently for the response. The revised text will be displayed in the right side.
 6. Edit the revised paragraph until you're satisfied.
 7. Press the "Download" button to download the docx file containing the raw paragraph and tracked changes.
 
