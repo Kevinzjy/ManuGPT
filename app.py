@@ -101,6 +101,16 @@ def download():
     return send_file(str(revised_file), as_attachment=True)
 
 
+def get_title_description(title="", keywords=""):
+    if title == "" and keywords == "":
+        return ""
+    if title != "" and keywords == "":
+        return f"(with the title '{title})'"
+    if title == "" and keywords != "":
+        return f"(with keywords '{keywords}')"
+    return f"(with the title '{title}' and keywords '{keywords}')"
+
+
 def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str, edit_endpoint=False):
     """
     From: https://github.com/manubot/manubot-ai-editor/blob/main/libs/manubot_ai_editor/models.py
@@ -120,9 +130,10 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
          1) the instructions to be used by the model for the revision of the paragraph,
          2) the paragraph to revise.
     """
+    description = get_title_description(title, keywords)
     if section_name in ("abstract",):
         prompt = f"""
-            Revise the following paragraph from the {section_name.capitalize()} of an academic paper (with the title '{title}' and keywords '{keywords}')
+            Revise the following paragraph from the {section_name.capitalize()} of an academic paper {description}
             so the research problem/question is clear,
                the solution proposed is clear,
                the text grammar is correct, spelling errors are fixed,
@@ -130,7 +141,7 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
         """
     elif section_name in ("introduction", "discussion"):
         prompt = f"""
-            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper (with the title '{title}' and keywords '{keywords}')
+            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper {description}
             so
                most of the citations to other academic papers are kept,
                the text minimizes the use of jargon,
@@ -139,7 +150,7 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
         """
     elif section_name in ("results",):
         prompt = f"""
-            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper (with the title '{title}' and keywords '{keywords}')
+            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper {description}
             so
                most references to figures and tables are kept,
                the details are enough to clearly explain the outcomes,
@@ -151,9 +162,7 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
     elif section_name in ("methods",):
         equation_definition = r"$$ ... $$ {#id}"
         revise_sentence = f"""
-            Revise the paragraph(s) below from
-            the {section_name.capitalize()} section of an academic paper
-            (with the title '{title}' and keywords '{keywords}')
+            Revise the paragraph(s) below from the {section_name.capitalize()} section of an academic paper {description}
         """.strip()
 
         prompt = f"""
@@ -169,7 +178,7 @@ def get_prompt(paragraph_text: str, section_name: str, title: str, keywords: str
         """.strip()
     else:
         prompt = f"""
-            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper (with the title '{title}' and keywords '{keywords}')
+            Revise the following paragraph from the {section_name.capitalize()} section of an academic paper {description}
             so
                the text minimizes the use of jargon,
                the text grammar is correct, spelling errors are fixed,
@@ -257,7 +266,7 @@ def save_docx(raw_text, revised_text, model_name, out_file):
 
 
 def load_api_key():
-    key_file = Path.home() / ".openai_key"
+    key_file = Path(__file__).parent / "openai_key.pub"
     if key_file.exists():
         with open(key_file, 'r') as f:
             return f.readline().rstrip()

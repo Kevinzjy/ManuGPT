@@ -131,3 +131,6 @@ dmypy.json
 .idea/
 
 .DS_Store
+logs/
+*venv
+openai_key.pub

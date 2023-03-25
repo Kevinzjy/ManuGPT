@@ -32,7 +32,7 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Create the file `~/.openai_key` and save your OpenAI key in it. This is optional because you can also input the API key in the web page.
+Create the file `openai_key.pub` in the project directory and save your OpenAI key in it. This is optional because you can also input the API key in the web page.
 
 Replace the following configurations in `app.py`
 
